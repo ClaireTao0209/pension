@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深圳退休养老金计算器（支持预估退休年龄 · 补齐年限）</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --border: #e0e4e8;
+            --text: #333;
+            --text-secondary: #666;
+            --estimate-bg: #f8faff;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 16px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            padding: 24px 0 20px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 140px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fafbfc;
+            transition: border-color 0.2s;
+        }
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+            background: #fff;
+        }
+        .unit {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+        .radio-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 6px 0;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            color: var(--text);
+            cursor: pointer;
+        }
+        .estimate-box {
+            background: var(--estimate-bg);
+            border: 1px dashed #c6d7f5;
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 16px;
+        }
+        .estimate-box .box-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+        .estimate-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .estimate-row:last-child {
+            margin-bottom: 0;
+        }
+        .estimate-row .form-group {
+            flex: 2;
+            min-width: 140px;
+        }
+        .btn-estimate {
+            flex: 1;
+            min-width: 90px;
+            padding: 10px 8px;
+            background: #fff;
+            color: #1a73e8;
+            border: 1.5px solid #1a73e8;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .btn-estimate:hover {
+            background: #e8f0fe;
+        }
+        .estimate-result {
+            font-size: 12px;
+            color: #188038;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+        .info-tip {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: #fafbfc;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 6px;
+        }
+        .btn-calculate {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        .btn-calculate:hover {
+            background: #1557b0;
+        }
+        .result {
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result-summary {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #e8f0fe 0%, #f0f7ff 100%);
+            border-radius: 12px;
+            margin-bottom: 14px;
+        }
+        .result-summary .total-amount {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .result-summary .total-amount .unit-text {
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+        .result-summary .retire-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        .result-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .result-item {
+            background: #fafbfc;
+            padding: 14px;
+            border-radius: 8px;
+        }
+        .result-item.full {
+            grid-column: 1 / -1;
+        }
+        .result-item .item-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .result-item .item-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .result-item .item-value .yuan {
+            font-size: 13px;
+            font-weight: 400;
+        }
+        .warning {
+            background: #fef7e0;
+            border: 1px solid #fce8b2;
+            color: #b06000;
+            font-size: 13px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 14px;
+            display: none;
+        }
+        .warning.show {
+            display: block;
+        }
+        .disclaimer {
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            margin: 20px 0 24px;
+        }
+        .dynamic-years {
+            font-weight: 600;
+            color: #1a73e8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧮 深圳退休养老金计算器</h1>
+            <p class="subtitle">支持预估退休年龄 · 自动补齐缴费年限 · 仅供参考</p>
+        </div>
+
+        <!-- 基本信息（含退休年龄设置） -->
+        <div class="card">
+            <div class="card-title">👤 基本信息</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>性别</label>
+                    <select id="gender">
+                        <option value="male">男</option>
+                        <option value="female55">女（原55岁退休 / 干部、技术岗）</option>
+                        <option value="female50">女（原50岁退休 / 工人岗）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>出生年份</label>
+                    <select id="birthYear"></select>
+                </div>
+                <div class="form-group">
+                    <label>出生月份</label>
+                    <select id="birthMonth"></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:2">
+                    <label>退休年龄设定</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="retireAgeType" value="legal" checked onchange="onRetireAgeTypeChange()"> 法定退休年龄（自动）</label>
+                        <label><input type="radio" name="retireAgeType" value="custom" onchange="onRetireAgeTypeChange()"> 自定义退休年龄</label>
+                    </div>
+                </div>
+                <div class="form-group" id="customRetireAgeGroup" style="display:none;">
+                    <label>自定义退休年龄 <span class="unit">(岁)</span></label>
+                    <input type="number" id="customRetireAge" value="60" min="45" max="70" step="0.5" onchange="updateFutureYears()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>户籍类型</label>
+                    <select id="hukou">
+                        <option value="shenzhen">深户</option>
+                        <option value="nonShenzhen">非深户</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <span id="legalRetireDisplay" style="font-size:13px; color:var(--text-secondary);"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 缴费情况（含补齐年限显示） -->
+        <div class="card">
+            <div class="card-title">💰 缴费情况</div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>月平均缴费工资 <span class="unit">(元)</span></label>
+                    <input type="number" id="avgSalary" value="8000" min="1000" step="100" placeholder="如8000">
+                </div>
+                <div class="form-group">
+                    <label>个人账户累计储存额 <span class="unit">(元)</span></label>
+                    <input type="number" id="accountBalance" value="250000" min="0" step="1000" placeholder="本息总额">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>已缴费年限 <span class="unit">(年)</span></label>
+                    <input type="number" id="paidYears" value="20" min="0" max="45" step="0.5" placeholder="实际已缴年数">
+                </div>
+                <div class="form-group">
+                    <label>视同缴费年限 <span class="unit">(年)</span></label>
+                    <input type="number" id="deemedYears" value="0" min="0" max="45" step="0.5" placeholder="1998年前的工龄">
+                </div>
+            </div>
+
+            <!-- 自动补齐年限展示 -->
+            <div class="info-tip" style="background:#e8f0fe; border:1px solid #c6d7f5;">
+                📌 根据你选择的退休年龄，<span id="futureYearsDisplay">0</span> 年（已自动补齐）
+                <br>🔹 总缴费年限（计算用）：<strong id="totalYearsDisplay" class="dynamic-years">20.0</strong> 年
+            </div>
+
+            <!-- 估算工具 -->
+            <div class="estimate-box">
+                <div class="box-title">🔍 智能估算（用你查得到的数据自动推算）</div>
+                <div class="estimate-row">
+                    <div class="form-group">
+                        <label>近期月缴费基数 <span class="unit">(元)</span></label>
+                        <input type="number" id="recentBase" placeholder="社保单上的缴费基数">
+                    </div>
+                    <button class="btn-estimate" onclick="estimateAvgSalary()">→ 估算平均工资</button>
+                    <span class="estimate-result" id="estimateSalaryMsg"></span>
+                </div>
+                <div class="estimate-row">
+                    <div class="form-group">
+                        <label>个人账户本金 <span class="unit">(元)</span></label>
+                        <input type="number" id="principal" placeholder="你缴入的全部本金">
+                    </div>
+                    <button class="btn-estimate" onclick="estimateTotalBalance()">→ 估算本息总额</button>
+                    <span class="estimate-result" id="estimateBalanceMsg"></span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-calculate" onclick="calculate()">📊 开始计算养老金</button>
+
+        <div class="warning" id="warning"></div>
+
+        <div class="result" id="result">
+            <div class="result-summary">
+                <div class="retire-info" id="retireInfo"></div>
+                <div class="total-amount" id="totalAmount">--<span class="unit-text"> 元/月</span></div>
+                <div class="retire-info" id="minYearInfo"></div>
+            </div>
+            <div class="result-detail" id="resultDetail"></div>
+        </div>
+
+        <p class="disclaimer">
+            ⚠️ 本计算器基于深圳市现行政策模拟，结果仅供参考。实际养老金以社保局核定为准。
+        </p>
+    </div>
+
+    <script>
+        (function() {
+            // 计发月数表
+            const JIFA_MONTHS = {
+                50: 195, 51: 190, 52: 185, 53: 180, 54: 175, 55: 170,
+                56: 164, 57: 158, 58: 152, 59: 145, 60: 139,
+                61: 132, 62: 125, 63: 117, 64: 109, 65: 101
+            };
+            const JIFA_BASE = 11293;
+            const SALARY_MIN = 4775;
+            const SALARY_MAX = 27549;
+            const ESTIMATE_RATE = 0.05;
+
+            // 初始化下拉选项
+            function initSelectors() {
+                const yearSelect = document.getElementById('birthYear');
+                const monthSelect = document.getElementById('birthMonth');
+                for (let y = 1960; y <= 2010; y++) {
+                    const opt = document.createElement('option');
+                    opt.value = y;
+                    opt.textContent = y + ' 年';
+                    if (y === 1975) opt.selected = true;
+                    yearSelect.appendChild(opt);
+                }
+                for (let m = 1; m <= 12; m++) {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m + ' 月';
+                    if (m === 6) opt.selected = true;
+                    monthSelect.appendChild(opt);
+                }
+            }
+
+            // 法定退休年龄计算（渐进式延迟）
+            function calcLegalRetire(gender, birthYear, birthMonth) {
+                let originalAge, delayUnit;
+                if (gender === 'male') { originalAge = 60; delayUnit = 4; }
+                else if (gender === 'female55') { originalAge = 55; delayUnit = 4; }
+                else { originalAge = 50; delayUnit = 2; }
+
+                const baseDate = new Date(2025, 0, 1);
+                const originalRetireDate = new Date(birthYear + originalAge, birthMonth - 1, 1);
+                let monthDiff = (originalRetireDate.getFullYear() - baseDate.getFullYear()) * 12 +
+                    (originalRetireDate.getMonth() - baseDate.getMonth());
+                if (monthDiff < 0) {
+                    return { age: originalAge, year: birthYear + originalAge, month: birthMonth };
+                }
+                const delayMonths = Math.ceil(monthDiff / delayUnit);
+                const totalMonths = originalAge * 12 + delayMonths;
+                const retireTotalMonths = birthYear * 12 + (birthMonth - 1) + totalMonths;
+                const retireYear = Math.floor(retireTotalMonths / 12);
+                const retireMonth = (retireTotalMonths % 12) + 1;
+                const age = Math.round((totalMonths / 12) * 100) / 100;
+                return { age, year: retireYear, month: retireMonth };
+            }
+
+            // 计算最低缴费年限
+            function calcMinYears(retireYear) {
+                if (retireYear < 2030) return 15;
+                const extra = Math.ceil((retireYear - 2029) * 0.5);
+                return Math.min(15 + extra, 20);
+            }
+
+            // 计算当前年龄（精确到小数）
+            function getCurrentAge(birthYear, birthMonth) {
+                const now = new Date();
+                let age = now.getFullYear() - birthYear;
+                const monthDiff = now.getMonth() + 1 - birthMonth;
+                if (monthDiff < 0) age -= 1;
+                else age += monthDiff / 12;
+                return age;
+            }
+
+            // 根据设定获取实际退休年龄
+            function getEffectiveRetireAge() {
+                const gender = document.getElementById('gender').value;
+                const birthYear = parseInt(document.getElementById('birthYear').value);
+                const birthMonth = parseInt(document.getElementById('birthMonth').value);
+                const type = document.querySelector('input[name="retireAgeType"]:checked').value;
+
+                if (type === 'legal') {
+                    const legal = calcLegalRetire(gender, birthYear, birthMonth);
+                    document.getElementById('legalRetireDisplay').innerText = 
+                        `法定退休年龄：${legal.age}岁（${legal.year}年${legal.month}月）`;
+                    return legal.age;
+                } else {
+                    const customAge = parseFloat(document.getElementById('customRetireAge').value) || 60;
+                    document.getElementById('legalRetireDisplay').innerText = `（自定义退休年龄）`;
+                    return customAge;
+                }
+            }
+
+            // 更新未来缴费年限与总年限显示
+            function updateFutureYears() {
+                const birthYear = parseInt(document.getElementById('birthYear').value);
+                const birthMonth = parseInt(document.getElementById('birthMonth').value);
+                const paidYears = parseFloat(document.getElementById('paidYears').value) || 0;
+                const deemedYears = parseFloat(document.getElementById('deemedYears').value) || 0;
+                const retireAge = getEffectiveRetireAge();
+                const currentAge = getCurrentAge(birthYear, birthMonth);
+                let futureYears = Math.max(0, retireAge - currentAge);
+                futureYears = Math.round(futureYears * 10) / 10; // 保留一位小数
+                const totalYears = paidYears + deemedYears + futureYears;
+
+                document.getElementById('futureYearsDisplay').innerText = futureYears.toFixed(1);
+                document.getElementById('totalYearsDisplay').innerText = totalYears.toFixed(1);
+                return { retireAge, futureYears, totalYears };
+            }
+
+            // 退休年龄类型切换
+            window.onRetireAgeTypeChange = function() {
+                const type = document.querySelector('input[name="retireAgeType"]:checked').value;
+                document.getElementById('customRetireAgeGroup').style.display = (type === 'custom') ? 'block' : 'none';
+                updateFutureYears();
+            };
+
+            // 估算平均工资
+            window.estimateAvgSalary = function() {
+                const recentBase = parseFloat(document.getElementById('recentBase').value);
+                if (!recentBase || recentBase <= 0) {
+                    document.getElementById('estimateSalaryMsg').textContent = '请输入有效的基数';
+                    return;
+                }
+                document.getElementById('avgSalary').value = recentBase;
+                document.getElementById('estimateSalaryMsg').textContent = `已填入 ${recentBase} 元`;
+            };
+
+            // 估算个人账户总额
+            window.estimateTotalBalance = function() {
+                const principal = parseFloat(document.getElementById('principal').value);
+                const paidYears = parseFloat(document.getElementById('paidYears').value) || 0;
+                if (!principal || principal <= 0) {
+                    document.getElementById('estimateBalanceMsg').textContent = '请输入本金金额';
+                    return;
+                }
+                if (paidYears <= 0) {
+                    document.getElementById('estimateBalanceMsg').textContent = '请先填写已缴费年限';
+                    return;
+                }
+                const interest = principal * ESTIMATE_RATE * paidYears * 0.5;
+                const total = Math.round(principal + interest);
+                document.getElementById('accountBalance').value = total;
+                document.getElementById('estimateBalanceMsg').textContent =
+                    `本金 ${principal.toLocaleString()} + 利息约 ${Math.round(interest).toLocaleString()} ≈ ${total.toLocaleString()} 元`;
+            };
+
+            // 主计算函数
+            window.calculate = function() {
+                const gender = document.getElementById('gender').value;
+                const birthYear = parseInt(document.getElementById('birthYear').value);
+                const birthMonth = parseInt(document.getElementById('birthMonth').value);
+                const hukou = document.getElementById('hukou').value;
+                const avgSalary = parseFloat(document.getElementById('avgSalary').value) || 8000;
+                const accountBalance = parseFloat(document.getElementById('accountBalance').value) || 250000;
+                const paidYears = parseFloat(document.getElementById('paidYears').value) || 20;
+                const deemedYears = parseFloat(document.getElementById('deemedYears').value) || 0;
+
+                // 获取退休年龄相关数据
+                const { retireAge, futureYears, totalYears } = updateFutureYears();
+                const retireAgeRounded = Math.round(retireAge);
+                const effectiveSalary = Math.min(Math.max(avgSalary, SALARY_MIN), SALARY_MAX);
+                const avgIndex = effectiveSalary / 14755;
+                const indexedSalary = JIFA_BASE * avgIndex;
+
+                // 退休年份用于最低缴费年限
+                const legalRetire = calcLegalRetire(gender, birthYear, birthMonth);
+                const retireYear = (document.querySelector('input[name="retireAgeType"]:checked').value === 'legal') ? 
+                    legalRetire.year : new Date().getFullYear() + Math.ceil(futureYears);
+                const minYears = calcMinYears(retireYear);
+
+                const warningEl = document.getElementById('warning');
+                const resultEl = document.getElementById('result');
+                warningEl.classList.remove('show');
+                resultEl.classList.remove('show');
+
+                if (totalYears < minYears) {
+                    warningEl.innerHTML = `⚠️ <strong>缴费年限不足！</strong>当前总年限为 <strong>${totalYears.toFixed(1)}年</strong>，但退休时最低要求为 <strong>${minYears}年</strong>。请增加缴费年限或延迟退休。`;
+                    warningEl.classList.add('show');
+                    return;
+                }
+
+                // 各项计算
+                const basicPension = (JIFA_BASE + indexedSalary) / 2 * totalYears * 0.01;
+                const jifaMonths = JIFA_MONTHS[retireAgeRounded] || 139;
+                const personalPension = accountBalance / jifaMonths;
+                const yearsAllowance = deemedYears > 0 ? 0 : totalYears * 4;
+                const extraTransition = 100;
+                let localSubsidy = 0;
+                if (hukou === 'shenzhen') {
+                    localSubsidy = totalYears * avgIndex * 18.5 + 20; // 地方补助用总缴费年限（含后续）
+                }
+
+                const totalPension = basicPension + personalPension + yearsAllowance + extraTransition + localSubsidy;
+
+                // 显示结果
+                const genderLabel = gender === 'male' ? '男' : '女';
+                document.getElementById('retireInfo').textContent =
+                    `${genderLabel} · 退休年龄${retireAge}岁 · 总缴费年限${totalYears.toFixed(1)}年`;
+                document.getElementById('totalAmount').innerHTML =
+                    Math.round(totalPension).toLocaleString() + '<span class="unit-text"> 元/月</span>';
+                document.getElementById('minYearInfo').textContent =
+                    `最低缴费年限要求：${minYears}年 | 计发月数：${jifaMonths}个月（${retireAgeRounded}岁）`;
+
+                const details = [
+                    { label: '① 统筹养老金', value: Math.round(basicPension), note: `(基数${JIFA_BASE}+指数化${Math.round(indexedSalary)})÷2×${totalYears.toFixed(1)}×1%` },
+                    { label: '② 个人账户养老金', value: Math.round(personalPension), note: `${Math.round(accountBalance).toLocaleString()}÷${jifaMonths}个月` },
+                    { label: '③ 缴费年限津贴', value: Math.round(yearsAllowance), note: deemedYears > 0 ? '有视同年限，无此项' : `${totalYears.toFixed(1)}年×4元` },
+                    { label: '④ 过渡性养老金', value: Math.round(extraTransition), note: '2026年广东固定100元' },
+                    { label: '⑤ 地方补助', value: Math.round(localSubsidy), note: hukou === 'shenzhen' ? `${totalYears.toFixed(1)}年×指数${avgIndex.toFixed(2)}×18.5+20` : '非深户无此项' },
+                ];
+
+                let detailHTML = '';
+                details.forEach(d => {
+                    const cls = (d.label.includes('⑤') && hukou !== 'shenzhen') ? 'result-item full' : 'result-item';
+                    detailHTML += `<div class="${cls}">
+                        <div class="item-label">${d.label}</div>
+                        <div class="item-value">${d.value.toLocaleString()}<span class="yuan"> 元/月</span></div>
+                        <div style="font-size:11px;color:#999;margin-top:2px;">${d.note}</div>
+                    </div>`;
+                });
+                document.getElementById('resultDetail').innerHTML = detailHTML;
+                resultEl.classList.add('show');
+
+                if (avgSalary < SALARY_MIN || avgSalary > SALARY_MAX) {
+                    warningEl.innerHTML = `⚠️ 缴费工资 ${avgSalary} 元超出基数范围，已按 ${effectiveSalary} 元计算。`;
+                    warningEl.classList.add('show');
+                }
+            };
+
+            // 页面加载完初始化（含事件绑定）
+            window.addEventListener('DOMContentLoaded', function() {
+                initSelectors();
+                // 监听输入变化，实时更新未来年限
+                ['gender', 'birthYear', 'birthMonth', 'paidYears', 'deemedYears', 'customRetireAge'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.addEventListener('input', updateFutureYears);
+                    if (el) el.addEventListener('change', updateFutureYears);
+                });
+                document.querySelectorAll('input[name="retireAgeType"]').forEach(radio => {
+                    radio.addEventListener('change', updateFutureYears);
+                });
+                updateFutureYears();
+                // 自动首次计算
+                setTimeout(() => { if (document.getElementById('result')) calculate(); }, 100);
+            });
+
+        })();
+    </script>
+</body>
+</html>
